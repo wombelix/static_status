@@ -970,7 +970,7 @@ while IFS=';' read -r MY_DOWN_COMMAND MY_DOWN_HOSTNAME_STRING MY_DOWN_PORT MY_DO
 		MY_DISPLAY_TEXT="${MY_DISPLAY_TEXT:1}"
 		(( MY_OUTAGE_COUNT++ ))
 		MY_OUTAGE_ITEMS+=("$(item_down)")
-		MY_ITEMS_JSON+=("${MY_DISPLAY_TEXT:-${MY_DOWN_HOSTNAME}};$MY_DOWN_COMMAND;Fail")
+		MY_ITEMS_JSON+=("${MY_DISPLAY_TEXT:-${MY_DOWN_HOSTNAME}};$MY_DOWN_COMMAND;Fail;${MY_DOWN_HOSTNAME};${MY_DOWN_PORT}")
 	fi
 
 done <"$MY_HOSTNAME_STATUS_DOWN"
@@ -985,7 +985,7 @@ while IFS=';' read -r MY_DEGRADE_COMMAND MY_DEGRADE_HOSTNAME_STRING MY_DEGRADE_T
 		MY_DISPLAY_TEXT="${MY_DISPLAY_TEXT:1}"
 		(( MY_DEGRADE_COUNT++ ))
 		MY_DEGRADE_ITEMS+=("$(item_degrade)")
-		MY_ITEMS_JSON+=("${MY_DISPLAY_TEXT:-${MY_DEGRADE_HOSTNAME}};$MY_DEGRADE_COMMAND;Degraded")
+		MY_ITEMS_JSON+=("${MY_DISPLAY_TEXT:-${MY_DEGRADE_HOSTNAME}};$MY_DEGRADE_COMMAND;Degraded;${MY_DEGRADE_HOSTNAME};")
 	fi
 
 done <"$MY_HOSTNAME_STATUS_DEGRADE"
@@ -1008,7 +1008,7 @@ while IFS=';' read -r MY_OK_COMMAND MY_OK_HOSTNAME_STRING MY_OK_PORT || [[ -n "$
 		MY_DISPLAY_TEXT="${MY_DISPLAY_TEXT:1}"
 		(( MY_AVAILABLE_COUNT++ ))
 		MY_AVAILABLE_ITEMS+=("$(item_ok)")
-		MY_ITEMS_JSON+=("${MY_DISPLAY_TEXT:-${MY_OK_HOSTNAME}};$MY_OK_COMMAND;OK")
+		MY_ITEMS_JSON+=("${MY_DISPLAY_TEXT:-${MY_OK_HOSTNAME}};$MY_OK_COMMAND;OK;${MY_OK_HOSTNAME};${MY_OK_PORT}")
 	fi
 
 done <"$MY_HOSTNAME_STATUS_OK"
@@ -1085,8 +1085,10 @@ if [ -n "$MY_STATUS_JSON" ]; then
 		MY_OUTAGE_ITEM=$(sed -e 's/<[^>]*>//g' <<< "${ITEMS[0]}")
 		MY_OUTAGE_ITEM_CMD="${ITEMS[1]}"
 		MY_OUTAGE_ITEM_STATUS="${ITEMS[2]}"
-		printf '  {\n    "site": "%s",\n    "command": "%s",\n    "status": "%s",\n    "updated": "%s"\n  }' \
-				"$MY_OUTAGE_ITEM" "$MY_OUTAGE_ITEM_CMD" "$MY_OUTAGE_ITEM_STATUS" "$MY_DATE_TIME" >> "$MY_STATUS_JSON"
+		MY_OUTAGE_ITEM_TARGET="${ITEMS[3]}"
+		MY_OUTAGE_ITEM_PARAMETER="${ITEMS[4]}"
+		printf '  {\n    "site": "%s",\n    "command": "%s",\n    "status": "%s",\n    "updated": "%s"\n    "target": "%s"\n    "parameter": "%s"\n  }' \
+				"$MY_OUTAGE_ITEM" "$MY_OUTAGE_ITEM_CMD" "$MY_OUTAGE_ITEM_STATUS" "$MY_DATE_TIME" "$MY_OUTAGE_ITEM_TARGET" "$MY_OUTAGE_ITEM_PARAMETER" >> "$MY_STATUS_JSON"
 		if [ "$position" -lt "$(( ${#MY_ITEMS_JSON[@]} - 1 ))" ];	then
 			printf ",\n" >> "$MY_STATUS_JSON"
 		else
