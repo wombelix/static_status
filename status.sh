@@ -336,6 +336,7 @@ function check_downtime() {
 		if [[ "$MY_DOWN_COMMAND" = "ping" ]] ||
 		   [[ "$MY_DOWN_COMMAND" = "ping6" ]] ||
 		   [[ "$MY_DOWN_COMMAND" = "nc" ]] ||
+		   [[ "$MY_DOWN_COMMAND" = "nc6" ]] ||
 		   [[ "$MY_DOWN_COMMAND" = "grep" ]] ||
 		   [[ "$MY_DOWN_COMMAND" = "traceroute" ]] ||
 		   [[ "$MY_DOWN_COMMAND" = "curl" ]] ||
@@ -377,7 +378,7 @@ function save_downtime() {
 	printf "\\n%s;%s;%s;%s" "$MY_COMMAND" "$MY_HOSTNAME" "$MY_PORT" "$MY_DOWN_TIME" >> "$MY_HOSTNAME_STATUS_DOWN"
 	if [[ "$BE_LOUD" = "yes" ]] || [[ "$BE_QUIET" = "no" ]]; then
 		printf "\\n%-5s %-4s %s" "DOWN:" "$MY_COMMAND" "$MY_HOSTNAME"
-		if [[ $MY_COMMAND == "nc" ]]; then
+		if [[ $MY_COMMAND == "nc" ]] || [[ $MY_COMMAND == "nc6" ]]; then
 			printf " %s" "$(port_to_name "$MY_PORT")"
 		fi
 		if [[ $MY_COMMAND == "grep" ]]; then
@@ -408,7 +409,7 @@ function save_availability() {
 	printf "\\n%s;%s;%s" "$MY_COMMAND" "$MY_HOSTNAME" "$MY_PORT" >> "$MY_HOSTNAME_STATUS_OK"
 	if [[ "$BE_LOUD" = "yes" ]]; then
 		printf "\\n%-5s %-4s %s" "UP:" "$MY_COMMAND" "$MY_HOSTNAME"
-		if [[ $MY_COMMAND == "nc" ]]; then
+		if [[ $MY_COMMAND == "nc" ]] || [[ $MY_COMMAND == "nc6" ]]; then
 			printf " %s" "$(port_to_name "$MY_PORT")"
 		fi
 		if [[ $MY_COMMAND == "grep" ]]; then
@@ -437,7 +438,7 @@ function save_history() {
 
 	if [[ "$BE_LOUD" = "yes" ]]; then
 		printf "\\n%-5s %-4s %s %s sec" "HIST:" "$MY_COMMAND" "$MY_HOSTNAME" "$MY_DOWN_TIME"
-		if [[ $MY_COMMAND == "nc" ]]; then
+		if [[ $MY_COMMAND == "nc" ]] || [[ $MY_COMMAND == "nc6" ]]; then
 			printf " %s" "$(port_to_name "$MY_PORT")"
 		fi
 		if [[ $MY_COMMAND == "grep" ]]; then
@@ -577,7 +578,7 @@ function item_ok() {
 			echo "ping $MY_OK_HOSTNAME"
 		elif [[ "$MY_OK_COMMAND" = "ping6" ]]; then
 			echo "ping6 $MY_OK_HOSTNAME"
-		elif [[ "$MY_OK_COMMAND" = "nc" ]]; then
+		elif [[ "$MY_OK_COMMAND" = "nc" ]] || [[ "$MY_OK_COMMAND" = "nc6" ]]; then
 			echo "$(port_to_name "$MY_OK_PORT") on $MY_OK_HOSTNAME"
 		elif [[ "$MY_OK_COMMAND" = "curl" ]]; then
 			echo "Site $MY_OK_HOSTNAME"
@@ -608,7 +609,7 @@ function item_down() {
 			echo "ping $MY_DOWN_HOSTNAME"
 		elif [[ "$MY_DOWN_COMMAND" = "ping6" ]]; then
 			echo "ping6 $MY_DOWN_HOSTNAME"
-		elif [[ "$MY_DOWN_COMMAND" = "nc" ]]; then
+		elif [[ "$MY_DOWN_COMMAND" = "nc" ]] || [[ "$MY_DOWN_COMMAND" = "nc6" ]]; then
 			echo "$(port_to_name "$MY_DOWN_PORT") on $MY_DOWN_HOSTNAME"
 		elif [[ "$MY_DOWN_COMMAND" = "curl" ]]; then
 			echo "Site $MY_DOWN_HOSTNAME"
@@ -662,7 +663,7 @@ function item_history() {
 			echo "ping $MY_HISTORY_HOSTNAME"
 		elif [[ "$MY_HISTORY_COMMAND" = "ping6" ]]; then
 			echo "ping6 $MY_HISTORY_HOSTNAME"
-		elif [[ "$MY_HISTORY_COMMAND" = "nc" ]]; then
+		elif [[ "$MY_HISTORY_COMMAND" = "nc" ]] || [[ "$MY_HISTORY_COMMAND" = "nc6" ]]; then
 			echo "$(port_to_name "$MY_HISTORY_PORT") on $MY_HISTORY_HOSTNAME"
 		elif [[ "$MY_HISTORY_COMMAND" = "curl" ]]; then
 			echo "Site $MY_HISTORY_HOSTNAME"
@@ -847,9 +848,12 @@ while IFS=';' read -r MY_COMMAND MY_HOSTNAME_STRING MY_PORT || [[ -n "$MY_COMMAN
 			check_downtime "$MY_COMMAND" "$MY_HOSTNAME_STRING" ""
 			save_downtime "$MY_COMMAND" "$MY_HOSTNAME_STRING" "" "$MY_DOWN_TIME"
 		fi
-	elif [[ "$MY_COMMAND" = "nc" ]]; then
+	elif [[ "$MY_COMMAND" = "nc" ]] || [[ "$MY_COMMAND" = "nc6" ]]; then
 		(( MY_HOSTNAME_COUNT++ ))
-		if nc -z -w "$MY_TIMEOUT" "$MY_HOSTNAME" "$MY_PORT" &> /dev/null; then
+		if [[ "$MY_COMMAND" = "nc6" ]]; then
+			MY_NC_IPV6="-6"
+		fi
+		if nc -z -w "$MY_TIMEOUT" "$MY_NC_IPV6" "$MY_HOSTNAME" "$MY_PORT" &> /dev/null; then
 			check_downtime "$MY_COMMAND" "$MY_HOSTNAME_STRING" "$MY_PORT"
 			# Check status change
 			if [[ "$MY_DOWN_TIME" -gt "0" ]]; then
@@ -960,6 +964,7 @@ while IFS=';' read -r MY_DOWN_COMMAND MY_DOWN_HOSTNAME_STRING MY_DOWN_PORT MY_DO
 	if [[ "$MY_DOWN_COMMAND" = "ping" ]] ||
 	   [[ "$MY_DOWN_COMMAND" = "ping6" ]] ||
 	   [[ "$MY_DOWN_COMMAND" = "nc" ]] ||
+	   [[ "$MY_DOWN_COMMAND" = "nc6" ]] ||
 	   [[ "$MY_DOWN_COMMAND" = "curl" ]] ||
 	   [[ "$MY_DOWN_COMMAND" = "http-status" ]] ||
 	   [[ "$MY_DOWN_COMMAND" = "grep" ]] ||
@@ -998,6 +1003,7 @@ while IFS=';' read -r MY_OK_COMMAND MY_OK_HOSTNAME_STRING MY_OK_PORT || [[ -n "$
 	if [[ "$MY_OK_COMMAND" = "ping" ]] ||
 	   [[ "$MY_OK_COMMAND" = "ping6" ]] ||
 	   [[ "$MY_OK_COMMAND" = "nc" ]] ||
+	   [[ "$MY_OK_COMMAND" = "nc6" ]] ||
 	   [[ "$MY_OK_COMMAND" = "curl" ]] ||
 	   [[ "$MY_OK_COMMAND" = "http-status" ]] ||
 	   [[ "$MY_OK_COMMAND" = "grep" ]] ||
@@ -1111,6 +1117,7 @@ while IFS=';' read -r MY_HISTORY_COMMAND MY_HISTORY_HOSTNAME_STRING MY_HISTORY_P
 		if [[ "$MY_HISTORY_COMMAND" = "ping" ]] ||
 		   [[ "$MY_HISTORY_COMMAND" = "ping6" ]] ||
 		   [[ "$MY_HISTORY_COMMAND" = "nc" ]] ||
+		   [[ "$MY_HISTORY_COMMAND" = "nc6" ]] ||
 		   [[ "$MY_HISTORY_COMMAND" = "curl" ]] ||
 		   [[ "$MY_HISTORY_COMMAND" = "http-status" ]] ||
 		   [[ "$MY_HISTORY_COMMAND" = "grep" ]] ||
